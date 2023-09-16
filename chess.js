@@ -1,88 +1,98 @@
-import * as TRES from 'three';
+import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// Declarar variables globales
-let escena, camara, renderizador, controles;
+// Global variables
+let scene, camera, renderer, controls;
 
-function inicializar() {
-    // Inicializar la escena
-    escena = new TRES.Scene();
+// Initialize the environment
+function initialize() {
+    // Initialize the scene
+    scene = new THREE.Scene();
 
-    // Inicializar la cámara
-    camara = new TRES.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camara.position.set(0, 49.249, 98.497);
-    camara.rotation.set(-26.57, 0, 0);
+    // Initialize the camera
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 49.249, 98.497);
+    camera.rotation.set(-26.57, 0, 0);
 
-    // Inicializar el renderizador
-    renderizador = new TRES.WebGLRenderer();
-    renderizador.shadowMap.enabled = true;
-    renderizador.toneMapping = TRES.ReinhardToneMapping;
-	renderizador.setPixelRatio(window.devicePixelRatio);
-    renderizador.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderizador.domElement);
+    // Initialize the renderer
+    renderer = new THREE.WebGLRenderer();
+    renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-    // Inicializar controles de órbita
-    controles = new OrbitControls(camara, renderizador.domElement);
-    controles.enableDamping = true;
-    controles.dampingFactor = 0.25;
-    controles.screenSpacePanning = false;
-    controles.maxPolarAngle = Math.PI / 2;
+    // Initialize orbit controls
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.25;
+    controls.screenSpacePanning = false;
+    controls.maxPolarAngle = Math.PI / 2;
 
-    // Configurar luces
-    const luzDeBulbo = new TRES.PointLight(0xffffff, 1, 100, 0);
-    luzDeBulbo.position.set(0, 20, 0);
-    escena.add(luzDeBulbo);
+    // Set up lighting
+    setupLighting();
 
-    const luzHemisferica = new TRES.HemisphereLight(0xddeeff, 0x0f0e0d, 0.02);
-    escena.add(luzHemisferica);
+    // Load models
+    loadModels();
 
-    const luzDireccional = new TRES.DirectionalLight(0xffffff, 1);
-    luzDireccional.position.set(50, 50, 50);
-    luzDireccional.castShadow = true;
-    escena.add(luzDireccional);
+    // Listen for window resizing
+    window.addEventListener('resize', onWindowResize, false);
 
-    const luzAmbiente = new TRES.AmbientLight(0x404040, 1);
-    escena.add(luzAmbiente);
+    // Start the animation
+    animate();
+}
 
-    // Cargar modelos
-    const cargador = new FBXLoader();
-    cargador.load('../models/chess.fbx', (objeto) => {
-        escena.add(objeto);
+// Set up lighting in the scene
+function setupLighting() {
+    const bulbLight = new THREE.PointLight(0xffffff, 1, 100, 0);
+    bulbLight.position.set(0, 20, 0);
+    scene.add(bulbLight);
 
-        const malla = objeto.getObjectByName('ChessBoard001');
+    const hemisphericLight = new THREE.HemisphereLight(0xddeeff, 0x0f0e0d, 0.02);
+    scene.add(hemisphericLight);
 
-        if (malla) {
-            malla.receiveShadow = true;
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(50, 50, 50);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    const ambientLight = new THREE.AmbientLight(0x404040, 1);
+    scene.add(ambientLight);
+}
+
+// Load models into the scene
+function loadModels() {
+    const loader = new FBXLoader();
+    loader.load('../models/chess.fbx', (object) => {
+        scene.add(object);
+        const mesh = object.getObjectByName('ChessBoard001');
+
+        if (mesh) {
+            mesh.receiveShadow = true;
         } else {
-            console.error('Mesh01 no encontrado');
+            console.error('ChessBoard001 not found');
         }
     });
-
-    // Escuchar cambios en el tamaño de la ventana
-    window.addEventListener('resize', alCambiarTamanioDeVentana, false);
-
-    // Comenzar la animación
-    animar();
 }
 
-// Función para manejar el cambio en el tamaño de la ventana
-function alCambiarTamanioDeVentana() {
-    camara.aspect = window.innerWidth / window.innerHeight;
-    camara.updateProjectionMatrix();
-    renderizador.setSize(window.innerWidth, window.innerHeight);
+// Handle window resizing
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Función para animar la escena
-function animar() {
-    requestAnimationFrame(animar);
+// Animate the scene
+function animate() {
+    requestAnimationFrame(animate);
 
-    // Actualizar controles de órbita
-    controles.update();
+    // Update orbit controls
+    controls.update();
 
-    // Renderizar la escena
-    renderizador.render(escena, camara);
+    // Render the scene
+    renderer.render(scene, camera);
 }
 
-// Iniciar el programa
-inicializar();
+// Initialize the program
+initialize();
